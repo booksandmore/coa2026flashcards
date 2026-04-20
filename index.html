@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#5b4ae0">
+<title>Court Office Assistant Exam Prep — Flashcards</title>
+<style>
+  /* ============================================================
+     Minimal flashcard styling — warm, light, no external fonts
+     ============================================================ */
+  :root {
+    --bg: #faf9f6;
+    --surface: #ffffff;
+    --text: #1a1a1d;
+    --muted: #7a7d85;
+    --primary: #5b4ae0;
+    --primary-soft: #efedfc;
+    --success: #16a34a;
+    --success-soft: #e7f6ec;
+    --border: #ececef;
+    --shadow: 0 1px 2px rgba(20,20,30,.04), 0 8px 28px rgba(20,20,30,.06);
+    --shadow-hover: 0 1px 2px rgba(20,20,30,.04), 0 14px 36px rgba(20,20,30,.09);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0d12;
+      --surface: #16181f;
+      --text: #ececf1;
+      --muted: #8d909a;
+      --primary: #8b7cff;
+      --primary-soft: #1f1c3a;
+      --success-soft: #14271c;
+      --border: #232631;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.4);
+      --shadow-hover: 0 1px 2px rgba(0,0,0,.5), 0 18px 40px rgba(0,0,0,.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .app {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 32px 20px 56px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.012em;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+    letter-spacing: 0.005em;
+  }
+
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 22px 4px 10px;
+    letter-spacing: 0.02em;
+  }
+  .meta .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  .meta b { color: var(--text); font-weight: 600; }
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success) 0%, #5fc97a 100%);
+    width: 0%;
+    transition: width .35s cubic-bezier(.4,.0,.2,1);
+  }
+
+  /* Card — the minimal touches */
+  .card-stage {
+    perspective: 1600px;
+    flex: 1;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  .card {
+    width: 100%;
+    height: 360px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.22,.61,.36,1);
+    cursor: pointer;
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--surface);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    padding: 36px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow .25s ease;
+  }
+  .card:hover .face { box-shadow: var(--shadow-hover); }
+  /* subtle accent stripe at the top */
+  .face::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, #8b7cff 100%);
+    opacity: .85;
+  }
+  .face .label {
+    position: absolute;
+    top: 18px;
+    left: 22px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .face .known-badge {
+    position: absolute;
+    top: 16px;
+    right: 22px;
+    font-size: 10.5px;
+    font-weight: 600;
+    background: var(--success-soft);
+    color: var(--success);
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: none;
+    letter-spacing: 0.04em;
+  }
+  .card.is-known .known-badge { display: inline-block; }
+  .face.back { transform: rotateY(180deg); }
+  .face .content {
+    font-size: 21px;
+    line-height: 1.45;
+    font-weight: 450;
+    max-height: 100%;
+    overflow-y: auto;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  .face .hint {
+    position: absolute;
+    bottom: 18px;
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Controls */
+  .nav {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .nav button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.005em;
+    transition: transform .1s, background .15s, border-color .15s;
+  }
+  .nav button:hover { background: var(--primary-soft); border-color: var(--primary-soft); }
+  .nav button:active { transform: scale(.97); }
+  .nav .flip-btn {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(91,74,224,.25);
+  }
+  .nav .flip-btn:hover { background: var(--primary); opacity: .94; }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .actions button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .actions button:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary-soft); }
+  .actions .known-btn.active {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: var(--success-soft);
+  }
+
+  .footer {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  .footer b { color: var(--text); font-weight: 600; }
+
+  @media (max-width: 420px) {
+    .card, .card-stage { height: 320px; min-height: 320px; }
+    .face .content { font-size: 18.5px; }
+    .face { padding: 32px 22px; }
+    header h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 id="deck-title">Court Office Assistant Exam Prep — Flashcards</h1>
+    <p id="deck-subtitle">Bonus flashcards · 2026–2027 Edition</p>
+  </header>
+
+  <div class="meta">
+    <span class="pill">Card <b id="current-idx">1</b> / <b id="total-count">0</b></span>
+    <span class="pill">Mastered <b id="known-count">0</b></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="card-stage">
+    <div class="card" id="card" role="button" aria-label="Flip card" tabindex="0">
+      <div class="face front">
+        <span class="label">Question</span>
+        <span class="known-badge">Mastered</span>
+        <div class="content" id="front-content">Loading…</div>
+        <div class="hint">Tap or press space to flip</div>
+      </div>
+      <div class="face back">
+        <span class="label">Answer</span>
+        <span class="known-badge">Mastered</span>
+        <div class="content" id="back-content"></div>
+        <div class="hint">Tap to flip back</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button id="prev-btn" aria-label="Previous">← Prev</button>
+    <button class="flip-btn" id="flip-btn">Flip</button>
+    <button id="next-btn" aria-label="Next">Next →</button>
+  </div>
+
+  <div class="actions">
+    <button class="known-btn" id="known-btn">✓ Mark Known</button>
+    <button id="shuffle-btn">🔀 Shuffle</button>
+    <button id="reset-btn">↺ Reset</button>
+  </div>
+
+  <div class="footer">
+    Keys: <b>Space</b> flip · <b>← →</b> navigate · <b>K</b> know · <b>S</b> shuffle
+  </div>
+</div>
+
+<script>
+/* ==============================================================
+   EDIT BELOW — YOUR DECK
+   ============================================================== */
+
+const DECK_TITLE = "Court Office Assistant Exam Prep \u2014 Flashcards";
+const DECK_SUBTITLE = "Bonus flashcards \u00b7 2026\u20132027 Edition";
+
+const FLASHCARDS = [
+  {
+    "q": "What is the primary reason most candidates fail the Court Office Assistant exam despite being capable?",
+    "a": "They prepare using generic materials instead of exam-specific tools tailored to Exam 45-850."
+  },
+  {
+    "q": "What is the core promise made by the guide to candidates?",
+    "a": "It guarantees structured, exam-specific preparation that maximizes performance potential but not a specific score."
+  },
+  {
+    "q": "What distinguishes this guide from most other civil service prep books?",
+    "a": "It is built deep around one exam rather than broadly covering generic clerical concepts."
+  },
+  {
+    "q": "What is the foundational principle behind the guide’s methodology?",
+    "a": "Every element is designed around actual exam structure, failure patterns, and domain-specific weaknesses."
+  },
+  {
+    "q": "Why is reading answer explanations critical even for correct answers?",
+    "a": "They reveal reasoning patterns, traps, and transferable strategies beyond the individual question."
+  },
+  {
+    "q": "What are the three types of errors identified in post-exam analysis?",
+    "a": "Content gaps, reasoning errors, and time-pressure mistakes."
+  },
+  {
+    "q": "Why is the Diagnostic Pre-Test considered mandatory?",
+    "a": "It identifies domain weaknesses and directs efficient study allocation."
+  },
+  {
+    "q": "What happens if a candidate skips the diagnostic and studies evenly?",
+    "a": "They waste time on strong areas and neglect high-impact weaknesses."
+  },
+  {
+    "q": "What is the recommended time limit for the Diagnostic Pre-Test?",
+    "a": "35 minutes for 30 questions."
+  },
+  {
+    "q": "What does a domain score from the diagnostic reveal?",
+    "a": "It shows starting level, priority areas, and optimal study strategy."
+  },
+  {
+    "q": "What are the three study paths provided in the guide?",
+    "a": "Intensive, Accelerated, and Final Sprint."
+  },
+  {
+    "q": "Which study path is recommended for candidates with 30+ days?",
+    "a": "The Intensive Path."
+  },
+  {
+    "q": "What is the key strategy in the Accelerated Path?",
+    "a": "Prioritize weakest domains based on diagnostic results."
+  },
+  {
+    "q": "What is the defining feature of the Final Sprint Path?",
+    "a": "Extreme focus on weakest domains and heavy reliance on full-length exams."
+  },
+  {
+    "q": "Why does Clerical Checking appear before Written Material in the book?",
+    "a": "Pattern recognition skills improve efficiency in later reading-based domains."
+  },
+  {
+    "q": "What is the purpose of Full-Length Exam One?",
+    "a": "To establish a baseline before deep domain study."
+  },
+  {
+    "q": "What is the purpose of Full-Length Exam Five?",
+    "a": "To simulate the real exam as a final dress rehearsal."
+  },
+  {
+    "q": "Why are practice exams designed differently from each other?",
+    "a": "Each targets different cognitive skills and weaknesses."
+  },
+  {
+    "q": "What is the biggest mistake candidates make with practice tests?",
+    "a": "Reviewing scores without analyzing explanations and error patterns."
+  },
+  {
+    "q": "Why must practice be timed from the beginning?",
+    "a": "Because speed under pressure is a trained skill, not a natural one."
+  },
+  {
+    "q": "What is the primary function of a Court Office Assistant?",
+    "a": "To manage, process, and maintain court records and administrative workflows accurately."
+  },
+  {
+    "q": "Why is the COA role considered central rather than peripheral?",
+    "a": "Court operations depend on accurate clerical processing for case progression."
+  },
+  {
+    "q": "What type of position is a Court Office Assistant?",
+    "a": "An entry-level civil service administrative role classified at Judicial Grade 16."
+  },
+  {
+    "q": "What quality is more important than legal knowledge for COAs?",
+    "a": "Precision and accuracy under pressure."
+  },
+  {
+    "q": "What type of tasks dominate a COA’s daily responsibilities?",
+    "a": "Document processing, data entry, record maintenance, and public interaction."
+  },
+  {
+    "q": "Why is accuracy critical in court record management?",
+    "a": "Errors can delay cases and impact real legal outcomes."
+  },
+  {
+    "q": "What distinguishes COAs from Court Clerks?",
+    "a": "Court Clerks exercise greater independent judgment and supervisory responsibilities."
+  },
+  {
+    "q": "What distinguishes COAs from Court Officers?",
+    "a": "COAs are administrative professionals while Court Officers are law enforcement personnel."
+  },
+  {
+    "q": "What types of documents do COAs commonly handle?",
+    "a": "Summonses, motions, affidavits, judgments, subpoenas, and appeals."
+  },
+  {
+    "q": "Why is Legal Terminology tested on the exam?",
+    "a": "Because COAs must understand documents sufficiently to process them correctly."
+  },
+  {
+    "q": "What is the pace of a courthouse workday best described as?",
+    "a": "Steady, structured, and frequently interrupted."
+  },
+  {
+    "q": "Why is multitasking essential in the COA role?",
+    "a": "Because tasks shift rapidly between processing, public interaction, and data entry."
+  },
+  {
+    "q": "What interpersonal challenge must COAs manage regularly?",
+    "a": "Dealing with stressed attorneys and confused members of the public."
+  },
+  {
+    "q": "What is the highest court in New York State?",
+    "a": "The Court of Appeals."
+  },
+  {
+    "q": "Why is the name “Supreme Court” misleading in New York?",
+    "a": "It is actually a trial court, not the highest court."
+  },
+  {
+    "q": "How many departments make up the Appellate Division?",
+    "a": "Four departments."
+  },
+  {
+    "q": "What determines which Appellate Division handles a case?",
+    "a": "Geographic region."
+  },
+  {
+    "q": "What type of cases does Family Court handle?",
+    "a": "Custody, support, juvenile, and family offense cases."
+  },
+  {
+    "q": "What is unique about Town and Village Courts?",
+    "a": "They may be presided over by non-attorney elected justices."
+  },
+  {
+    "q": "Why is understanding court structure important for the exam?",
+    "a": "It provides context for legal procedures and document flow."
+  },
+  {
+    "q": "Why is “preparing hard” often insufficient for Exam 45-850 success?",
+    "a": "Because effort applied to incorrect or generic materials does not develop exam-specific cognitive patterns required for scoring."
+  },
+  {
+    "q": "What hidden assumption leads candidates to misuse study time across domains?",
+    "a": "The assumption that all domains require the same study method."
+  },
+  {
+    "q": "Why does uniform study allocation reduce overall exam performance?",
+    "a": "Because score gains come disproportionately from improving weakest domains rather than maintaining strong ones."
+  },
+  {
+    "q": "What is the strategic danger of overconfidence after initial exposure to Clerical Checking?",
+    "a": "It prevents development of a systematic method, leading to preventable accuracy loss under time pressure."
+  },
+  {
+    "q": "Why is Clerical Checking not a “simple comparison task” cognitively?",
+    "a": "Because it requires suppression of automatic pattern recognition in favor of deliberate verification."
+  },
+  {
+    "q": "What cognitive bias causes candidates to miss discrepancies in Clerical Checking?",
+    "a": "Pattern completion bias, where the brain fills in expected information instead of verifying actual data."
+  },
+  {
+    "q": "Why does transposition error detection require a procedural method rather than intuition?",
+    "a": "Because transposed digits appear correct when processed as a whole but only reveal errors through sequential comparison."
+  },
+  {
+    "q": "What is the core failure mechanism behind most Clerical Checking mistakes?",
+    "a": "Confirming similarity instead of actively searching for differences."
+  },
+  {
+    "q": "Why does fatigue disproportionately affect Clerical Checking accuracy?",
+    "a": "Because sustained narrow attention degrades over repeated comparisons without structured scanning."
+  },
+  {
+    "q": "What is the operational purpose of the Line-by-Line Method beyond accuracy?",
+    "a": "It reduces cognitive load by eliminating decision-making about where to focus next."
+  },
+  {
+    "q": "Why does the Line-by-Line Method improve speed over time despite being slower initially?",
+    "a": "Because it replaces inconsistent scanning with repeatable procedural efficiency."
+  },
+  {
+    "q": "What is the risk of switching scanning strategies mid-exam?",
+    "a": "It disrupts rhythm and increases cognitive load, leading to higher error rates."
+  },
+  {
+    "q": "Why must names be compared component-by-component rather than as a whole?",
+    "a": "Because discrepancies often occur in order, initials, or suffixes rather than spelling."
+  },
+  {
+    "q": "What makes alphanumeric substitution errors particularly difficult to detect?",
+    "a": "Visual similarity between characters like O and 0 or I and 1 exploits perceptual shortcuts."
+  },
+  {
+    "q": "Why is date comparison unreliable when processed as a single unit?",
+    "a": "Because format variation can mask differences in individual components."
+  },
+  {
+    "q": "What distinguishes a high-performing Clerical Checking candidate from an average one?",
+    "a": "Consistent procedural execution rather than general attentiveness."
+  },
+  {
+    "q": "Why is 100% certainty on every question a flawed strategy in this domain?",
+    "a": "Because excessive time on single questions reduces overall scoring potential."
+  },
+  {
+    "q": "What is the primary purpose of the Two- Pass Method?",
+    "a": "To protect time allocation and maximize total correct answers rather than perfect individual accuracy."
+  },
+  {
+    "q": "Why must a candidate commit to an answer before flagging in the first pass?",
+    "a": "Because unanswered questions guarantee zero points while flagged guesses retain scoring potential."
+  },
+  {
+    "q": "What is the optimal mindset when returning to flagged questions?",
+    "a": "Re-evaluate from scratch rather than continuing previous incomplete reasoning."
+  },
+  {
+    "q": "Why is second-pass accuracy often higher than first-pass accuracy?",
+    "a": "Because reduced time pressure and refreshed focus improve cognitive processing."
+  },
+  {
+    "q": "What is the strategic error in spending excessive time early in the section?",
+    "a": "It creates artificial time pressure later, increasing rushed mistakes."
+  },
+  {
+    "q": "Why is guessing statistically advantageous on this exam?",
+    "a": "Because there is no penalty for incorrect answers."
+  },
+  {
+    "q": "What separates a reasoning error from a content gap?",
+    "a": "A reasoning error misapplies known information, while a content gap reflects missing knowledge."
+  },
+  {
+    "q": "Why is identifying error type more valuable than knowing the correct answer?",
+    "a": "Because it provides actionable direction for improvement."
+  },
+  {
+    "q": "What is the fundamental rule of the Understanding Written Material domain?",
+    "a": "All correct answers must be supported directly by the passage."
+  },
+  {
+    "q": "Why is outside knowledge dangerous in reading comprehension questions?",
+    "a": "Because it can conflict with or override the specific wording of the passage."
+  },
+  {
+    "q": "What distinguishes inference from assumption in exam questions?",
+    "a": "Inference is supported by the text, while assumption introduces unsupported ideas."
+  },
+  {
+    "q": "Why are inference questions the most error-prone?",
+    "a": "Because candidates overextend reasoning beyond textual evidence."
+  },
+  {
+    "q": "What is the primary trap in vocabulary-in-context questions?",
+    "a": "Selecting a familiar definition instead of the meaning implied by context."
+  },
+  {
+    "q": "Why is rereading passages repeatedly ineffective under time pressure?",
+    "a": "Because it indicates lack of a targeted extraction strategy."
+  },
+  {
+    "q": "What is the strategic purpose of identifying main ideas quickly?",
+    "a": "It provides a framework for locating and validating supporting details."
+  },
+  {
+    "q": "Why is scanning for keywords insufficient in complex passages?",
+    "a": "Because meaning often depends on relationships between ideas rather than isolated terms."
+  },
+  {
+    "q": "What defines rule-based reasoning in the Applying Facts domain?",
+    "a": "Strict adherence to stated rules regardless of what seems reasonable in general."
+  },
+  {
+    "q": "Why are “reasonable” answers often incorrect in scenario questions?",
+    "a": "Because they do not strictly follow the given rule conditions."
+  },
+  {
+    "q": "What is the most common mistake in applying facts to scenarios?",
+    "a": "Substituting general judgment for rule-specific application."
+  },
+  {
+    "q": "Why must rules be applied literally rather than interpretively?",
+    "a": "Because exam questions are designed around exact rule conditions."
+  },
+  {
+    "q": "What is the function of the Scenario Analysis Framework?",
+    "a": "To structure reasoning and prevent misapplication of rules."
+  },
+  {
+    "q": "Why is misreading one condition in a scenario highly costly?",
+    "a": "Because it invalidates the entire reasoning chain."
+  },
+  {
+    "q": "What differentiates expert-level candidates in this domain?",
+    "a": "Their ability to isolate and apply only relevant rule components without distraction."
+  },
+  {
+    "q": "A candidate consistently scores high in strong domains but ignores weak ones.What is the predictable outcome on the eligible list?",
+    "a": "Their rank plateaus because marginal gains in strong domains produce minimal overall score improvement compared to fixing weaknesses."
+  },
+  {
+    "q": "Why does improving a weak domain produce exponential ranking benefits rather than linear gains?",
+    "a": "Because score clustering means small improvements shift a candidate across hundreds of ranking positions."
+  },
+  {
+    "q": "What is the strategic implication of score clustering between 78 and 88?",
+    "a": "Even a one-or two-point increase can significantly change hiring timeline and reachability."
+  },
+  {
+    "q": "Why is “finishing the exam” not a sufficient performance goal?",
+    "a": "Because ranking depends on accuracy, not completion alone."
+  },
+  {
+    "q": "What is the danger of equating familiarity with mastery in exam prep?",
+    "a": "Familiarity creates confidence without ensuring accuracy under timed conditions."
+  },
+  {
+    "q": "Why is repetition without feedback ineffective?",
+    "a": "Because it reinforces existing mistakes rather than correcting them."
+  },
+  {
+    "q": "What distinguishes practice from deliberate practice in this exam context?",
+    "a": "Deliberate practice includes error analysis and targeted correction after each attempt."
+  },
+  {
+    "q": "Why must candidates track performance by domain instead of overall score?",
+    "a": "Because overall scores conceal domain-specific weaknesses."
+  },
+  {
+    "q": "What is the hidden cost of not using a Performance Tracker?",
+    "a": "Preparation becomes directionless and inefficient."
+  },
+  {
+    "q": "Why is time-pressure classified as a separate error type?",
+    "a": "Because correct reasoning can fail under time constraints without speed conditioning."
+  },
+  {
+    "q": "What is the strategic advantage of understanding exam construction patterns?",
+    "a": "It allows prediction of traps and reduces cognitive load during decision-making."
+  },
+  {
+    "q": "Why do exam writers favor subtle errors over obvious ones in Clerical Checking?",
+    "a": "Because the domain measures precision under realistic conditions, not basic detection ability."
+  },
+  {
+    "q": "What is the key difference between scanning and verifying?",
+    "a": "Scanning looks for similarity while verifying confirms exact matches element-by-element."
+  },
+  {
+    "q": "Why is “they look the same” an invalid conclusion in Clerical Checking?",
+    "a": "Because visual similarity does not confirm identical data sequences."
+  },
+  {
+    "q": "What mental shift is required to master Clerical Checking?",
+    "a": "From recognition-based processing to verification-based processing."
+  },
+  {
+    "q": "Why is consistency more important than speed in early Clerical Checking practice?",
+    "a": "Because speed without accuracy reinforces incorrect habits."
+  },
+  {
+    "q": "What happens when a candidate abandons method under pressure?",
+    "a": "Error rates increase sharply due to reliance on unreliable intuition."
+  },
+  {
+    "q": "Why is the Two-Pass Method superior to linear completion strategies?",
+    "a": "It prioritizes high-confidence points first and isolates time-intensive questions."
+  },
+  {
+    "q": "What is the primary failure point in poorly executed Two-Pass strategies?",
+    "a": "Spending too long during the first pass, eliminating second-pass flexibility."
+  },
+  {
+    "q": "Why is it incorrect to revisit every question during the second pass?",
+    "a": "Because it wastes time that should be reserved for uncertain items only."
+  },
+  {
+    "q": "What cognitive benefit does flagging provide beyond time management?",
+    "a": "It reduces anxiety by allowing temporary disengagement from difficult questions."
+  },
+  {
+    "q": "Why is second-guessing dangerous when no new information is available?",
+    "a": "Because initial reasoning is often more accurate than revised intuition under pressure."
+  },
+  {
+    "q": "What distinguishes efficient review from ineffective review?",
+    "a": "Efficient review targets flagged uncertainty, not already-secure answers."
+  },
+  {
+    "q": "Why do candidates misidentify discrepancy locations in multi-difference questions?",
+    "a": "Because they stop scanning after detecting the first difference."
+  },
+  {
+    "q": "What is the correct approach when one discrepancy is found?",
+    "a": "Continue scanning to confirm whether additional discrepancies exist."
+  },
+  {
+    "q": "Why is incomplete verification penalized heavily in multi-field answers?",
+    "a": "Because partial accuracy still results in a fully incorrect response."
+  },
+  {
+    "q": "What defines a “trap answer” in this exam context?",
+    "a": "An option that appears correct under superficial reasoning but fails under precise rule application."
+  },
+  {
+    "q": "Why are trap answers often more appealing than correct ones?",
+    "a": "Because they align with intuitive or generalized thinking rather than strict logic."
+  },
+  {
+    "q": "What is the most effective defense against trap answers?",
+    "a": "Strict adherence to method and rule-based reasoning."
+  },
+  {
+    "q": "Why is intuition unreliable in scenario-based questions?",
+    "a": "Because scenarios are designed to conflict with intuitive responses."
+  },
+  {
+    "q": "What is the key distinction between general correctness and exam correctness?",
+    "a": "Exam correctness depends solely on the provided rule and scenario conditions."
+  },
+  {
+    "q": "Why must candidates avoid “real-world reasoning” in Applying Facts questions?",
+    "a": "Because exam scenarios operate within controlled rule frameworks."
+  },
+  {
+    "q": "What is the risk of adding unstated assumptions to a scenario?",
+    "a": "It leads to selecting answers that are not supported by given conditions."
+  },
+  {
+    "q": "Why is isolating relevant information critical in scenario analysis?",
+    "a": "Because irrelevant details are included deliberately to distract."
+  },
+  {
+    "q": "What cognitive skill is being tested when irrelevant information is introduced?",
+    "a": "Selective attention and disciplined reasoning."
+  },
+  {
+    "q": "Why is misinterpreting one keyword often fatal to a question?",
+    "a": "Because it changes the meaning of the rule or scenario entirely."
+  },
+  {
+    "q": "What is the strategic role of elimination in multiple-choice questions?",
+    "a": "To reduce cognitive load and increase probability of correct selection."
+  },
+  {
+    "q": "Why is elimination more powerful than direct selection under uncertainty?",
+    "a": "Because removing wrong options narrows the decision space."
+  },
+  {
+    "q": "What distinguishes expert-level elimination from guessing?",
+    "a": "It is based on rule violation detection rather than uncertainty."
+  },
+  {
+    "q": "Why is time awareness critical even when performing well on questions?",
+    "a": "Because pacing errors can negate accuracy gains across the exam."
+  },
+  {
+    "q": "A candidate improves from 82 to 84 while another improves from 70 to 74.Who likely experiences the larger ranking jump and why?",
+    "a": "The candidate improving from 82 to 84 because scores are densely clustered in the upper range, making small increases more impactful."
+  },
+  {
+    "q": "During Clerical Checking, a candidate identifies one discrepancy and immediately selects an answer.Why is this approach flawed?",
+    "a": "Because additional discrepancies may exist, and failure to verify all fields results in incorrect answers."
+  },
+  {
+    "q": "A candidate finishes Clerical Checking quickly but scores low.What is the most likely cause?",
+    "a": "They prioritized speed over systematic verification, leading to undetected discrepancies."
+  },
+  {
+    "q": "A candidate spends 45 seconds per Clerical Checking question but maintains high accuracy.What is the strategic issue?",
+    "a": "They will likely run out of time, reducing total correct answers despite accuracy."
+  },
+  {
+    "q": "Why is balancing speed and accuracy more important than maximizing either individually?",
+    "a": "Because the exam rewards total correct answers under time constraints, not perfection or speed alone."
+  },
+  {
+    "q": "A candidate consistently changes correct answers during review.What cognitive error are they demonstrating?",
+    "a": "Second-guessing bias driven by anxiety rather than new evidence."
+  },
+  {
+    "q": "Why should review be limited to flagged questions only?",
+    "a": "Because reviewing all questions wastes time and increases risk of changing correct answers."
+  },
+  {
+    "q": "A Clerical Checking entry differs only by “O” vs “0”.Why is this considered a high-level trap?",
+    "a": "Because visual similarity exploits perceptual shortcuts and bypasses superficial scanning."
+  },
+  {
+    "q": "Why is reading numbers as quantities rather than sequences dangerous in this exam?",
+    "a": "Because sequence errors like transpositions go undetected when processed as whole values."
+  },
+  {
+    "q": "A candidate misses errors late in the Clerical Checking section.What is the most likely cause?",
+    "a": "Cognitive fatigue reducing attention precision."
+  },
+  {
+    "q": "What is the best mitigation strategy for Clerical Checking fatigue?",
+    "a": "Strict adherence to a consistent scanning method to reduce mental strain."
+  },
+  {
+    "q": "A passage suggests a conclusion but does not explicitly state it.How should this be handled?",
+    "a": "Select the answer only if it is directly supported by the text, not extended beyond it."
+  },
+  {
+    "q": "A candidate selects an inference that is logically true but not supported by the passage.Why is this incorrect?",
+    "a": "Because exam answers must be text-supported, not logically possible."
+  },
+  {
+    "q": "Why do inference questions penalize overthinking?",
+    "a": "Because correct answers require restrained reasoning, not extended interpretation."
+  },
+  {
+    "q": "What is the most reliable strategy for inference questions?",
+    "a": "Base conclusions strictly on explicit textual evidence and minimal logical extension."
+  },
+  {
+    "q": "A vocabulary question includes a familiar word used in an unfamiliar way.What is the correct approach?",
+    "a": "Determine meaning from context, not default definition."
+  },
+  {
+    "q": "Why are “common meaning” answers often incorrect in vocabulary questions?",
+    "a": "Because the exam tests contextual meaning, not general usage."
+  },
+  {
+    "q": "A candidate rereads passages multiple times but still struggles.What is the core issue?",
+    "a": "Lack of an active reading strategy for extracting key information efficiently."
+  },
+  {
+    "q": "What distinguishes active reading from passive reading in this domain?",
+    "a": "Active reading focuses on structure, purpose, and key details rather than full comprehension."
+  },
+  {
+    "q": "Why is identifying the main idea early strategically valuable?",
+    "a": "It guides interpretation of all supporting details and questions."
+  },
+  {
+    "q": "A scenario includes extra details not relevant to the rule.What is their purpose?",
+    "a": "To distract and test selective attention."
+  },
+  {
+    "q": "What is the biggest mistake when applying rules to scenarios?",
+    "a": "Allowing irrelevant details to influence decision-making."
+  },
+  {
+    "q": "A rule states “must always” but a scenario suggests flexibility.What should the candidate do?",
+    "a": "Follow the rule strictly regardless of scenario implications."
+  },
+  {
+    "q": "Why are absolute terms like “always” critical in rule-based questions?",
+    "a": "They eliminate interpretation and require strict adherence."
+  },
+  {
+    "q": "A candidate selects an answer that is fair but not rule-compliant.What error occurred?",
+    "a": "They prioritized judgment over rule application."
+  },
+  {
+    "q": "Why is fairness irrelevant in Applying Facts questions?",
+    "a": "Because correctness is determined solely by rule adherence."
+  },
+  {
+    "q": "A candidate misreads one condition in a multi-step scenario.What is the likely outcome?",
+    "a": "The entire answer becomes incorrect due to flawed reasoning."
+  },
+  {
+    "q": "Why is it important to restate rules mentally before applying them?",
+    "a": "To ensure precise interpretation before evaluating the scenario."
+  },
+  {
+    "q": "What is the role of structured frameworks in scenario questions?",
+    "a": "They prevent logical shortcuts and ensure full rule application."
+  },
+  {
+    "q": "A candidate eliminates two options but guesses between the remaining two.What improves their odds?",
+    "a": "Elimination increases probability of correct guessing from 25% to 50%."
+  },
+  {
+    "q": "Why is elimination especially valuable under time pressure?",
+    "a": "It reduces decision complexity and speeds up selection."
+  },
+  {
+    "q": "What distinguishes high-level elimination from weak elimination?",
+    "a": "High-level elimination identifies rule violations, not just unlikely answers."
+  },
+  {
+    "q": "A candidate chooses an answer because it “sounds right”.Why is this unreliable?",
+    "a": "Because trap answers are designed to sound correct while violating rules."
+  },
+  {
+    "q": "Why do exam writers include multiple plausible answers?",
+    "a": "To test precision in reasoning rather than recognition."
+  },
+  {
+    "q": "What is the primary function of trap answers in exam design?",
+    "a": "To differentiate between superficial and precise reasoning."
+  },
+  {
+    "q": "A candidate performs well in practice but poorly in timed exams.What is missing?",
+    "a": "Speed conditioning under realistic constraints."
+  },
+  {
+    "q": "Why must full-length exams be taken under strict conditions?",
+    "a": "To simulate cognitive pressure and pacing of the real test."
+  },
+  {
+    "q": "What is the risk of practicing in relaxed environments?",
+    "a": "It creates false confidence and poor time adaptation."
+  },
+  {
+    "q": "Why is exam-day performance largely determined before test day?",
+    "a": "Because habits and cognitive patterns are established during preparation."
+  },
+  {
+    "q": "What is the defining trait of top-ranking candidates?",
+    "a": "They execute consistent, disciplined strategies under pressure rather than relying on ability alone."
+  },
+  {
+    "q": "A candidate answers quickly and accurately in early sections but slows significantly later.What hidden skill gap is being exposed?",
+    "a": "Endurance under sustained cognitive load."
+  },
+  {
+    "q": "Why is endurance a critical but overlooked exam skill?",
+    "a": "Because accuracy declines over time without sustained mental discipline."
+  },
+  {
+    "q": "A Clerical Checking question contains two subtle discrepancies but the candidate finds only one.What specific error type is this?",
+    "a": "Incomplete verification error."
+  },
+  {
+    "q": "Why are multi-error questions disproportionately valuable for exam writers?",
+    "a": "They reveal whether candidates fully execute systematic processes."
+  },
+  {
+    "q": "What is the difference between detecting an error and completing verification?",
+    "a": "Detection identifies a discrepancy, while verification confirms all fields have been checked."
+  },
+  {
+    "q": "A candidate identifies differences inconsistently.What does this indicate about their method?",
+    "a": "They are using visual scanning instead of structured comparison."
+  },
+  {
+    "q": "Why is inconsistency more damaging than slow performance?",
+    "a": "Because it produces unpredictable error patterns that are hard to correct."
+  },
+  {
+    "q": "A candidate performs well in isolated domain drills but poorly in full exams.Why?",
+    "a": "They lack integration skills across domains under time pressure."
+  },
+  {
+    "q": "What does “integration” mean in the context of this exam?",
+    "a": "Applying multiple domain skills sequentially under continuous time constraints."
+  },
+  {
+    "q": "Why are full-length exams essential for high performance?",
+    "a": "They train transitions between domains and sustained focus."
+  },
+  {
+    "q": "A reading passage includes legal terminology unfamiliar to the candidate.What is the correct strategy?",
+    "a": "Focus on contextual meaning rather than prior knowledge."
+  },
+  {
+    "q": "Why is unfamiliar vocabulary often irrelevant to answering comprehension questions?",
+    "a": "Because questions target meaning derived from context, not definition recall."
+  },
+  {
+    "q": "A candidate selects an answer that is partially supported by the passage.Why is it wrong?",
+    "a": "Because correct answers must be fully supported, not partially."
+  },
+  {
+    "q": "What distinguishes a correct inference from a tempting incorrect one?",
+    "a": "A correct inference does not extend beyond textual evidence."
+  },
+  {
+    "q": "Why are extreme answer choices often incorrect in reading comprehension?",
+    "a": "Because passages rarely support absolute or exaggerated claims."
+  },
+  {
+    "q": "A scenario question includes emotional or dramatic details.What is their purpose?",
+    "a": "To distract from the rule-based decision required."
+  },
+  {
+    "q": "Why must emotional context be ignored in Applying Facts questions?",
+    "a": "Because decisions must be based strictly on procedural rules."
+  },
+  {
+    "q": "A candidate hesitates between two answers, one rule-based and one intuitive.Which should they choose?",
+    "a": "The rule-based answer."
+  },
+  {
+    "q": "Why is intuitive reasoning penalized in this exam?",
+    "a": "Because it often conflicts with explicit rule conditions."
+  },
+  {
+    "q": "A rule contains multiple conditions.What is the correct application approach?",
+    "a": "Verify that all conditions are satisfied before selecting an answer."
+  },
+  {
+    "q": "Why is partial rule application incorrect?",
+    "a": "Because missing one condition invalidates the entire conclusion."
+  },
+  {
+    "q": "A candidate overlooks a single keyword like “except” or “not”.What happens?",
+    "a": "The logical direction of the question is reversed, leading to incorrect answers."
+  },
+  {
+    "q": "Why are keywords like “except” high-risk elements?",
+    "a": "They invert expected reasoning patterns."
+  },
+  {
+    "q": "A candidate reads quickly and confidently but misses key constraints.What is the issue?",
+    "a": "Overconfidence leading to shallow processing."
+  },
+  {
+    "q": "Why is deliberate reading superior to fast reading in this exam?",
+    "a": "Because accuracy depends on precise interpretation, not speed alone."
+  },
+  {
+    "q": "A candidate recognizes a question type and answers without fully reading it.Why is this dangerous?",
+    "a": "Because subtle variations in wording change the correct answer."
+  },
+  {
+    "q": "What is the risk of pattern recognition without verification?",
+    "a": "It leads to automatic but incorrect responses."
+  },
+  {
+    "q": "Why is every question treated as unique despite repeated formats?",
+    "a": "Because traps are embedded through small variations."
+  },
+  {
+    "q": "A candidate improves accuracy but not speed.What is the next focus?",
+    "a": "Timed drills to convert accuracy into usable exam performance."
+  },
+  {
+    "q": "Why is speed without structure unreliable?",
+    "a": "Because it depends on unstable intuition rather than repeatable processes."
+  },
+  {
+    "q": "A candidate relies heavily on memory instead of strategy.What is the limitation?",
+    "a": "Memory does not adapt to new question variations or traps."
+  },
+  {
+    "q": "Why is strategy more valuable than memorization in this exam?",
+    "a": "Because the exam tests application and reasoning, not recall alone."
+  },
+  {
+    "q": "A candidate experiences time pressure near the end.What is the root cause?",
+    "a": "Poor pacing during earlier sections."
+  },
+  {
+    "q": "Why must pacing be actively monitored throughout the exam?",
+    "a": "Because time cannot be recovered once lost."
+  },
+  {
+    "q": "What is the most effective pacing mindset?",
+    "a": "Steady progression with controlled time per question."
+  },
+  {
+    "q": "A candidate panics after encountering several difficult questions.What should they do?",
+    "a": "Continue systematically and rely on strategy rather than emotional reaction."
+  },
+  {
+    "q": "Why is emotional control a performance factor in this exam?",
+    "a": "Because anxiety disrupts reasoning and increases errors."
+  },
+  {
+    "q": "What is the relationship between confidence and preparation?",
+    "a": "Confidence should be based on tested performance, not perception."
+  },
+  {
+    "q": "Why is exam success predictable for well-prepared candidates?",
+    "a": "Because performance patterns are established during practice."
+  },
+  {
+    "q": "What is the ultimate differentiator between average and top candidates?",
+    "a": "Consistent execution of disciplined strategies under pressure across all domains."
+  }
+];
+
+/* ==============================================================
+   APP — typically no edits needed below
+   ============================================================== */
+
+const STORAGE_KEY = "flashcards_" + DECK_TITLE.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+let deck = FLASHCARDS.map((c, i) => ({ ...c, originalIdx: i }));
+let currentIdx = 0;
+let knownSet = new Set();
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  if (Array.isArray(saved.known)) knownSet = new Set(saved.known);
+} catch (e) {}
+
+function saveProgress() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ known: [...knownSet] })); } catch (e) {}
+}
+
+const $ = id => document.getElementById(id);
+const card = $("card"), frontContent = $("front-content"), backContent = $("back-content");
+const currentIdxEl = $("current-idx"), totalCountEl = $("total-count"), knownCountEl = $("known-count");
+const progressFill = $("progress-fill"), knownBtn = $("known-btn");
+
+$("deck-title").textContent = DECK_TITLE;
+$("deck-subtitle").textContent = DECK_SUBTITLE;
+
+function render() {
+  const c = deck[currentIdx];
+  frontContent.textContent = c.q;
+  backContent.textContent = c.a;
+  card.classList.remove("flipped");
+  currentIdxEl.textContent = currentIdx + 1;
+  totalCountEl.textContent = deck.length;
+  knownCountEl.textContent = knownSet.size;
+  const k = knownSet.has(c.originalIdx);
+  card.classList.toggle("is-known", k);
+  knownBtn.classList.toggle("active", k);
+  knownBtn.textContent = k ? "✓ Known" : "✓ Mark Known";
+  progressFill.style.width = (knownSet.size / deck.length * 100).toFixed(1) + "%";
+}
+
+function flip() { card.classList.toggle("flipped"); }
+function next() { currentIdx = (currentIdx + 1) % deck.length; render(); }
+function prev() { currentIdx = (currentIdx - 1 + deck.length) % deck.length; render(); }
+function toggleKnown() {
+  const c = deck[currentIdx];
+  knownSet.has(c.originalIdx) ? knownSet.delete(c.originalIdx) : knownSet.add(c.originalIdx);
+  saveProgress(); render();
+}
+function shuffle() {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  currentIdx = 0; render();
+}
+function resetProgress() {
+  if (!confirm("Reset your 'mastered' progress for this deck?")) return;
+  knownSet.clear(); saveProgress(); render();
+}
+
+card.addEventListener("click", flip);
+card.addEventListener("keydown", e => { if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); flip(); } });
+$("flip-btn").addEventListener("click", flip);
+$("next-btn").addEventListener("click", next);
+$("prev-btn").addEventListener("click", prev);
+$("known-btn").addEventListener("click", toggleKnown);
+$("shuffle-btn").addEventListener("click", shuffle);
+$("reset-btn").addEventListener("click", resetProgress);
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.code === "Space") { e.preventDefault(); flip(); }
+  else if (e.code === "ArrowRight") next();
+  else if (e.code === "ArrowLeft") prev();
+  else if (e.key === "k" || e.key === "K") toggleKnown();
+  else if (e.key === "s" || e.key === "S") shuffle();
+});
+
+let touchStartX = 0;
+card.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+card.addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  if (Math.abs(dx) > 60) dx < 0 ? next() : prev();
+}, { passive: true });
+
+render();
+</script>
+</body>
+</html>
